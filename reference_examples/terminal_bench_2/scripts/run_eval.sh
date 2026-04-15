@@ -21,7 +21,9 @@ if [[ -f "$REPO_DIR/.env" ]]; then
     set +a
 fi
 
-# 30 hard tasks: official TB2 difficulty=hard split
+MODEL="${HARBOR_MODEL:-anthropic/claude-opus-4-6}"
+
+# 30-task hard subset for cheaper development and debugging loops.
 HARD_TASKS=(
     bn-fit-modify cancel-async-tasks circuit-fibsqrt configure-git-webserver
     dna-assembly extract-moves-from-video feal-differential-cryptanalysis
@@ -46,6 +48,7 @@ esac
 
 echo "agent:       $AGENT_IMPORT_PATH"
 echo "task_set:    $TASK_SET"
+echo "model:       $MODEL"
 echo "concurrent:  $N_CONCURRENT"
 echo "runs:        $RUNS"
 echo ""
@@ -62,7 +65,7 @@ CMD=(
     uv run harbor run
     --agent-import-path "$AGENT_IMPORT_PATH"
     -d "terminal-bench@2.0"
-    -m "${HARBOR_MODEL:-anthropic/claude-sonnet-4-6}"
+    -m "$MODEL"
     -e runloop
     -n "$N_CONCURRENT"
     --n-attempts "$RUNS"

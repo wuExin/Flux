@@ -27,12 +27,15 @@ The repo root ships `.env.example`, but the shell wrappers in `scripts/` source 
 - Put the same `.env` file in this directory, or
 - Export the needed variables in your shell before running the scripts.
 
-As shipped, the code expects at least `ANTHROPIC_API_KEY`. Harbor/Runloop credentials may also need to be present in your environment depending on your setup.
+As shipped, the code expects at least `ANTHROPIC_API_KEY`. Running through runloop is highly recommended for large-scale runs.
+
+The default model in this example is `anthropic/claude-opus-4-6`. Override `HARBOR_MODEL` only if you intentionally want a non-default config.
 
 ## Task Set
 
 - Dataset ID in the paper code: `terminal-bench@2.0`
-- `meta_harness.py` uses the full TB2 dataset by default: 89 tasks, 2 trials each
+- `meta_harness.py` defaults to the full TB2 dataset: 89 tasks, 2 search trials each
+- `--full-eval` adds the optional 5-trial winner pass on the full dataset
 - The paper submission metadata targeted `laude-institute/terminal-bench-2` commit `69671fbaac6d67a7ef0dfec016cc38a64ef7a77c`
 
 ## Smoke Check
@@ -41,9 +44,21 @@ As shipped, the code expects at least `ANTHROPIC_API_KEY`. Harbor/Runloop creden
 uv run bash scripts/run_eval.sh agents.baseline_kira:AgentHarness full 1 1 -i extract-elf
 ```
 
-The shell wrappers use `timeout` when available and fall back to `gtimeout` if
-GNU coreutils is installed on macOS. If neither command is present, the Harbor
-run still works but will not have an outer wall-clock timeout.
+## Recommended Bring-Up Order
+
+For new harness ideas, do not start with the default 89x2 search loop.
+
+1. Smoke-test a candidate on `extract-elf`.
+2. Run the cheaper 30-task `hard` subset while the idea is still unstable.
+3. Move to `uv run python meta_harness.py --iterations 1` once the idea looks promising.
+
+Hard-subset example:
+
+```bash
+uv run bash scripts/run_eval.sh agents.baseline_kira:AgentHarness hard 1 10
+```
+
+The shell wrappers use `timeout` when available and fall back to `gtimeout` if GNU coreutils is installed on macOS. If neither command is present, the Harbor run still works but will not have an outer wall-clock timeout.
 
 ## Local Vs Remote Sandbox
 
@@ -51,6 +66,12 @@ As released, the scripts use `-e runloop`. If you want a different Harbor enviro
 
 ## Version Note
 
-The paper code did not ship a separate pinned `tb-cli` version. This release
-keeps parity and installs the `terminal-bench` package declared in
-`pyproject.toml`; `harbor` must be available from that install.
+The direct TB2 example dependencies are pinned in `pyproject.toml`:
+
+- `harbor==0.3.0`
+- `litellm==1.82.6`
+- `python-dotenv==1.2.2`
+- `tenacity==9.1.4`
+- `terminal-bench==0.2.18` from `harbor-framework/terminal-bench` commit `1a6ffa9674b571da0ed040c470cb40c4d85f9b9b`
+
+If you want a local lockfile for your environment, run `uv lock` from this directory.

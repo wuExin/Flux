@@ -1,6 +1,6 @@
 # Terminal-Bench 2
 
-Paper reference experiment for Meta-Harness on Terminal-Bench 2.0. The outer loop evolves full agent scaffold files in `agents/`, then evaluates them with Harbor on the full 89-task TB2 dataset used in the paper runs.
+Paper reference experiment for Meta-Harness on Terminal-Bench 2.0. The default search config uses Harbor on the full 89-task TB2 dataset with 2 trials per task on Opus 4.6, matching the intended paper-style search setup in this release.
 
 ## Quick Start
 
@@ -17,17 +17,25 @@ Read setup details first:
 sed -n '1,200p' SETUP.md
 ```
 
-Run one evolve iteration:
-
-```bash
-uv run python meta_harness.py --iterations 1 --trials 2
-```
-
-Run one candidate on the `extract-elf` smoke task:
+Start with a cheap smoke check:
 
 ```bash
 uv run bash scripts/run_eval.sh agents.baseline_kira:AgentHarness full 1 1 -i extract-elf
 ```
+
+When trying a new idea, validate it on the cheaper 30-task `hard` subset before paying for a full default search:
+
+```bash
+uv run bash scripts/run_eval.sh agents.baseline_kira:AgentHarness hard 1 10
+```
+
+Run one evolve iteration with the default full-dataset search config:
+
+```bash
+uv run python meta_harness.py --iterations 1
+```
+
+Add `--full-eval` if you also want the optional 5-trial winner pass on the full dataset.
 
 ## Key Files
 
@@ -37,4 +45,6 @@ uv run bash scripts/run_eval.sh agents.baseline_kira:AgentHarness full 1 1 -i ex
 
 ## Runtime And Cost
 
-With Opus with a high-tier API key, each iteration takes about 4-6 hours to complete. The cost for a single iteration is approximately $500.
+With Opus 4.6 and a high-tier API key, the default 89x2 search run takes about 4-6 hours and costs roughly $500 _for each iteration_. The recommended bring-up path is to first smoke-test a candidate on the `extract-elf` task, then run the cheaper 30-task `hard` subset (which still contains plenty of signal for evaluation), and finally move to the full default run with all 89 tasks.
+
+This is a cleaned-up version of the code we used for the paper. Please let us know if anything goes wrong.

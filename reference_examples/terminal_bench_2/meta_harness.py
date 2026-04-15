@@ -97,6 +97,8 @@ SMOKE_TEST_TASK = "extract-elf"  # simple task, reliably fast
 
 DATASET = "terminal-bench@2.0"
 MODEL = "anthropic/claude-opus-4-6"
+DEFAULT_SEARCH_TRIALS = 2
+DEFAULT_CONCURRENCY = 50
 
 PROPOSER_ALLOWED_TOOLS = [
     "Read",
@@ -874,7 +876,10 @@ def main():
         "--iterations", type=int, default=5, help="Number of evolution iterations"
     )
     parser.add_argument(
-        "--trials", type=int, default=3, help="Trials per task during evolution"
+        "--trials",
+        type=int,
+        default=DEFAULT_SEARCH_TRIALS,
+        help="Trials per task during evolution (default: 2)",
     )
     parser.add_argument(
         "--propose-timeout",
@@ -896,10 +901,15 @@ def main():
     )
     parser.add_argument("--skip-smoke", action="store_true", help="Skip smoke tests")
     parser.add_argument(
-        "--full-eval", action="store_true", help="Run 5-trial eval for winners"
+        "--full-eval",
+        action="store_true",
+        help="Run the optional 5-trial winner eval on the full dataset",
     )
     parser.add_argument(
-        "--concurrent", type=int, default=50, help="Max concurrent trials (default: 50)"
+        "--concurrent",
+        type=int,
+        default=DEFAULT_CONCURRENCY,
+        help="Max concurrent trials (default: 50)",
     )
     args = parser.parse_args()
 
