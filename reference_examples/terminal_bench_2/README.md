@@ -1,6 +1,6 @@
 # Terminal-Bench 2
 
-Paper reference experiment for Meta-Harness on Terminal-Bench 2.0. The outer loop evolves full agent scaffold files in `agents/`, then evaluates them with Harbor on the TB2 hard split.
+Paper reference experiment for Meta-Harness on Terminal-Bench 2.0. The outer loop evolves full agent scaffold files in `agents/`, then evaluates them with Harbor on the full 89-task TB2 dataset used in the paper runs.
 
 ## Quick Start
 
@@ -37,4 +37,4 @@ uv run bash scripts/run_eval.sh agents.baseline_kira:AgentHarness full 1 1 -i ex
 
 ## Runtime And Cost
 
-The source notes budgeted the hard-split run at roughly `$70/iteration` and about `~4h/iteration`, dominated by Harbor/Runloop evaluation over 30 hard tasks with 2 trials each. The proposer cost is minor relative to the benchmark cost.
+With Opus with a high-tier API key, each iteration takes about 4-6 hours to complete. The cost for a single iteration is approximately $500.

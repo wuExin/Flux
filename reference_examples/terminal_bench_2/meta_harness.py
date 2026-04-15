@@ -1,7 +1,7 @@
 """Autonomous evolution loop for agent scaffolds on Terminal-Bench 2.0.
 
-Starts from the shipped KIRA baseline and evolves improvements on the official
-TB2 hard split.
+Starts from the shipped KIRA baseline and evolves improvements on the full
+official TB2 dataset used in the paper runs.
 
     uv run python meta_harness.py --iterations 5
     uv run python meta_harness.py --iterations 10 --trials 2 --fresh
@@ -90,7 +90,8 @@ BASELINES = [
 BASELINE_AGENT_NAME = BASELINES[0][0]  # primary baseline for frontier comparison
 BASELINE_IMPORT_PATH = BASELINES[0][1]
 
-N_EVAL_TASKS = 30  # official TB2 hard split
+EVAL_TASK_SET = "full"
+N_EVAL_TASKS = 89  # full official TB2 dataset used in the paper runs
 
 SMOKE_TEST_TASK = "extract-elf"  # simple task, reliably fast
 
@@ -134,14 +135,14 @@ def run_cmd(cmd, timeout=7200, cwd=None):
 
 
 def harbor_run(import_path, job_name, n_trials=2, n_concurrent=10):
-    """Run harbor eval on the TB2 hard split via runloop.
+    """Run harbor eval on the paper TB2 config via runloop.
 
     result_dict is None if harbor crashed hard; job_dir may still have partial results.
     """
     cmd = [
         str(EVOLVE_DIR / "scripts" / "run_eval.sh"),
         import_path,
-        "hard",
+        EVAL_TASK_SET,
         str(n_trials),
         str(n_concurrent),
         "--job-name",
@@ -502,8 +503,8 @@ def render_task_prompt(iteration, n_trials):
         f"Run iteration {iteration} of the scaffold evolution loop (KIRA track). "
         f"Model: {MODEL} (Opus). "
         f"Start from agents/baseline_kira.py as the parent.\n\n"
-        f"## Eval split: {N_EVAL_TASKS} official TB2 hard tasks x {n_trials} trials\n\n"
-        f"These are the shipped TB2 hard tasks used by this reference example. "
+        f"## Eval split: {N_EVAL_TASKS} official TB2 tasks x {n_trials} trials\n\n"
+        f"This reference example uses the full TB2 dataset from the paper runs. "
         f"The shipped artifact starts from a 28.1% KIRA baseline and reached 46.5% on this split. "
         f"Focus on scaffold changes that help the agent solve complex, long-horizon tasks.\n\n"
         f"## Run directories\n"
@@ -825,7 +826,7 @@ def run_evolve(args):
             f"  {_dim(f'timing: propose={_elapsed(propose_time)} bench={_elapsed(bench_time)} total={_elapsed(wall_time)}')}"
         )
 
-    # ── Phase Final: Winners get full eval ─────────────────────
+    # ── Phase Final: Winners get 5-trial eval on the full dataset ────────────
     if _interrupted or not args.full_eval:
         return
 

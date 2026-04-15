@@ -32,7 +32,7 @@ As shipped, the code expects at least `ANTHROPIC_API_KEY`. Harbor/Runloop creden
 ## Task Set
 
 - Dataset ID in the paper code: `terminal-bench@2.0`
-- Hard split used by `meta_harness.py`: 30 tasks, 2 trials each
+- `meta_harness.py` uses the full TB2 dataset by default: 89 tasks, 2 trials each
 - The paper submission metadata targeted `laude-institute/terminal-bench-2` commit `69671fbaac6d67a7ef0dfec016cc38a64ef7a77c`
 
 ## Smoke Check
