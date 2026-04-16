@@ -5,6 +5,8 @@
 Meta-Harness is a framework for automated search over task-specific model harnesses: the code around a fixed base model that decides what to store, retrieve, and show while the model works. This repo contains the framework and two reference experiments from the paper.
 The paper is [Meta-Harness: End-to-End Optimization of Model Harnesses](https://arxiv.org/abs/2603.28052).
 
+**If you end up building something cool with Meta-Harness, please let us know!** We would be happy to showcase it here in the main README and link to your repository, artifact, blog post, paper, or whatever else is most useful.
+
 ## Contents
 
 - The reusable framework and onboarding flow for applying Meta-Harness to a new domain.
