@@ -1,28 +1,67 @@
 import os
+import platform
+import sys
 
 from .agent import Agent
 from .config import load_config
 from .display import show_response, show_tool_call, show_tool_result
 from .llm import LLMClient
 from .tools.bash import BashTool
+from .tools.edit import EditTool
+from .tools.read import ReadTool
 from .tools.registry import ToolRegistry
+from .tools.write import WriteTool
 
 SYSTEM_PROMPT = """\
 You are Flux, an AI coding assistant running in the user's terminal.
 You help with software engineering tasks: writing code, debugging, explaining, and running commands.
 
+## Environment
+- Platform: {platform}
+- Shell: {shell}
+- Python: {python}
+- Working directory: {cwd}
+
 ## Tools
-You have access to a `bash` tool that executes shell commands on the user's machine.
-Use it to read files, run tests, check git status, install packages, etc.
+You have access to the following tools:
+
+- `bash` — Execute shell commands on the user's machine.
+- `read` — Read file contents with line numbers. Use offset/limit for large files.
+- `write` — Create new files or completely overwrite existing files.
+- `edit` — Perform exact string replacement in a file. The old_string must match exactly once.
 
 ## Guidelines
 - Be concise and direct. Lead with the answer or action.
-- Read files before modifying them. Understand context before suggesting changes.
+- **Read files before modifying them.** Use `read` to view a file before using `edit` or `write`.
+- Prefer `read` over `bash` for reading files (e.g., use `read` instead of `cat`).
+- Prefer `edit` for modifying existing files. Only use `write` for new files or full rewrites.
+- Prefer `write` over `bash` for creating files (e.g., use `write` instead of `echo >>`).
 - When running commands, prefer safe, non-destructive operations.
 - If a command might be destructive (rm -rf, git reset --hard), warn the user first.
 - Do not fabricate file contents or command outputs. Always use tools to verify.
 - When you're done, stop. Do not call tools unnecessarily.
+- **Use commands compatible with the current platform.** On Windows, avoid bash-specific syntax like heredoc (<<), use `python` instead of `python3`, and prefer `type` over `cat`.
 """
+
+
+def _detect_shell() -> str:
+    """Detect the current shell environment."""
+    if os.name == "nt":
+        # Check if running under Git Bash, MSYS2, or similar
+        if os.environ.get("MSYSTEM") or os.environ.get("BASH"):
+            return "git-bash"
+        return "cmd.exe"
+    return os.environ.get("SHELL", "/bin/sh")
+
+
+def _build_system_prompt(cwd: str) -> str:
+    """Build system prompt with environment information."""
+    return SYSTEM_PROMPT.format(
+        platform=platform.platform(),
+        shell=_detect_shell(),
+        python=f"{sys.executable} ({platform.python_version()})",
+        cwd=cwd,
+    )
 
 
 def main():
@@ -33,11 +72,15 @@ def main():
         base_url=config.base_url,
     )
     registry = ToolRegistry()
-    registry.register(BashTool(timeout=config.bash_timeout, cwd=os.getcwd()))
+    cwd = os.getcwd()
+    registry.register(BashTool(timeout=config.bash_timeout, cwd=cwd))
+    registry.register(ReadTool(cwd=cwd))
+    registry.register(WriteTool(cwd=cwd))
+    registry.register(EditTool(cwd=cwd))
     agent = Agent(
         llm=llm,
         tools=registry,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=_build_system_prompt(cwd),
         on_tool_call=show_tool_call,
         on_tool_result=show_tool_result,
     )
