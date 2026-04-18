@@ -4,6 +4,14 @@ from .llm import LLMClient, LLMResponse
 from .message import ToolCall
 from .tools.registry import ToolRegistry
 
+try:
+    from .tools.todo import TodoState
+except ImportError:
+    TodoState = None  # type: ignore
+
+
+logger = logging.getLogger(__name__)
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,6 +24,8 @@ class Agent:
         max_iterations: int = 50,
         on_tool_call=None,
         on_tool_result=None,
+        todo_state: TodoState | None = None,
+        nag_threshold: int = 3,
     ):
         self.llm = llm
         self.tools = tools
@@ -24,12 +34,25 @@ class Agent:
         self.messages: list[dict] = []
         self.on_tool_call = on_tool_call
         self.on_tool_result = on_tool_result
+        self.todo_state = todo_state
+        self.nag_threshold = nag_threshold
 
     def run(self, user_query: str) -> str:
         """Execute the full agent loop, return final text reply."""
         self.messages.append({"role": "user", "content": user_query})
 
         for i in range(self.max_iterations):
+            if self.todo_state:
+                self.todo_state.advance_iteration()
+                if self.todo_state.should_nag(self.nag_threshold):
+                    self.messages.append({
+                        "role": "system",
+                        "content": (
+                            "[Reminder] You have active todos. Use `todo` with action='list' to check progress. "
+                            "Mark tasks complete with action='complete' when done."
+                        )
+                    })
+
             response = self.llm.chat(
                 messages=self.messages,
                 tools=self.tools.to_api_format(),

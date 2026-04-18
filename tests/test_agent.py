@@ -7,6 +7,7 @@ from flux.llm import LLMResponse
 from flux.message import ToolCall
 from flux.tools.bash import BashTool
 from flux.tools.registry import ToolRegistry
+from flux.tools.todo import TodoState, TodoTool
 
 
 def make_agent(llm_responses: list[LLMResponse], max_iterations=50) -> Agent:
@@ -161,3 +162,108 @@ class TestAgent:
         assert result == "Both done"
         # user + assistant(2 tool_calls) + 2 tool_results + assistant(final)
         assert len(agent.messages) == 5
+
+
+class TestAgentTodoIntegration:
+    def test_nag_reminder_injected(self):
+        """Verify nag reminder is injected after N iterations without todo calls."""
+        state = TodoState()
+        state.add("Test task", "")
+        registry = ToolRegistry()
+        registry.register(TodoTool(state))
+
+        llm = MagicMock()
+        llm.chat.side_effect = [
+            LLMResponse(content="response", finish_reason="stop"),
+        ]
+
+        agent = Agent(
+            llm=llm,
+            tools=registry,
+            system_prompt="test",
+            todo_state=state,
+            nag_threshold=3,
+        )
+
+        # Advance past nag threshold
+        for _ in range(4):
+            state.advance_iteration()
+
+        assert state.should_nag(threshold=3)
+
+    def test_todo_call_resets_nag(self):
+        """Verify todo call resets nag counter."""
+        state = TodoState()
+        state.add("Test task", "")
+        registry = ToolRegistry()
+        registry.register(TodoTool(state))
+
+        llm = MagicMock()
+        llm.chat.side_effect = [
+            LLMResponse(content="response", finish_reason="stop"),
+        ]
+
+        agent = Agent(
+            llm=llm,
+            tools=registry,
+            system_prompt="test",
+            todo_state=state,
+            nag_threshold=3,
+        )
+
+        state.advance_iteration()
+        state.advance_iteration()
+        state.record_todo_call()
+        state.advance_iteration()
+
+        assert not state.should_nag(threshold=3)
+
+    def test_nag_message_injected_during_run(self):
+        """Verify nag reminder message is added to messages during run."""
+        state = TodoState()
+        state.add("Test task", "")
+        registry = ToolRegistry()
+        registry.register(BashTool())
+        registry.register(TodoTool(state))
+
+        llm = MagicMock()
+        # Create enough responses to trigger nag (threshold=3)
+        llm.chat.side_effect = [
+            LLMResponse(
+                content="",
+                finish_reason="tool_calls",
+                tool_calls=[ToolCall(id="c1", name="bash", arguments={"command": "echo 1"})],
+            ),
+            LLMResponse(
+                content="",
+                finish_reason="tool_calls",
+                tool_calls=[ToolCall(id="c2", name="bash", arguments={"command": "echo 2"})],
+            ),
+            LLMResponse(
+                content="",
+                finish_reason="tool_calls",
+                tool_calls=[ToolCall(id="c3", name="bash", arguments={"command": "echo 3"})],
+            ),
+            LLMResponse(
+                content="",
+                finish_reason="tool_calls",
+                tool_calls=[ToolCall(id="c4", name="bash", arguments={"command": "echo 4"})],
+            ),
+            LLMResponse(content="done", finish_reason="stop"),
+        ]
+
+        agent = Agent(
+            llm=llm,
+            tools=registry,
+            system_prompt="test",
+            todo_state=state,
+            nag_threshold=3,
+        )
+
+        result = agent.run("work on task")
+        assert result == "done"
+
+        # Check that a system reminder was injected
+        system_msgs = [m for m in agent.messages if m.get("role") == "system"]
+        assert len(system_msgs) > 0
+        assert any("Reminder" in m.get("content", "") for m in system_msgs)

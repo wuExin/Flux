@@ -12,6 +12,7 @@ class Config:
     base_url: str | None = None
     max_tokens: int = 8000
     bash_timeout: int = 120
+    nag_threshold: int = 3
 
 
 def load_config() -> Config:
@@ -32,4 +33,5 @@ def load_config() -> Config:
         base_url=os.environ.get("FLUX_BASE_URL"),
         max_tokens=int(os.environ.get("FLUX_MAX_TOKENS", "8000")),
         bash_timeout=int(os.environ.get("FLUX_BASH_TIMEOUT", "120")),
+        nag_threshold=int(os.environ.get("FLUX_NAG_THRESHOLD", "3")),
     )

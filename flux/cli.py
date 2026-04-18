@@ -10,6 +10,7 @@ from .tools.bash import BashTool
 from .tools.edit import EditTool
 from .tools.read import ReadTool
 from .tools.registry import ToolRegistry
+from .tools.todo import TodoState, TodoTool
 from .tools.write import WriteTool
 
 SYSTEM_PROMPT = """\
@@ -29,6 +30,7 @@ You have access to the following tools:
 - `read` — Read file contents with line numbers. Use offset/limit for large files.
 - `write` — Create new files or completely overwrite existing files.
 - `edit` — Perform exact string replacement in a file. The old_string must match exactly once.
+- `todo` — Track task progress for multi-step tasks.
 
 ## Guidelines
 - Be concise and direct. Lead with the answer or action.
@@ -41,6 +43,17 @@ You have access to the following tools:
 - Do not fabricate file contents or command outputs. Always use tools to verify.
 - When you're done, stop. Do not call tools unnecessarily.
 - **Use commands compatible with the current platform.** On Windows, avoid bash-specific syntax like heredoc (<<), use `python` instead of `python3`, and prefer `type` over `cat`.
+
+## Task Tracking with Todo
+For multi-step tasks, use the `todo` tool to track progress:
+- Create tasks: `todo action='create' subject='...' description='...'`
+- List tasks: `todo action='list'`
+- Start a task: `todo action='start' task_id='...'`
+- Complete a task: `todo action='complete' task_id='...'`
+- Delete a task: `todo action='delete' task_id='...'`
+- Update a task: `todo action='update' task_id='...' subject='...' description='...'`
+
+Only one task can be in_progress at a time. Use `list` to check progress regularly.
 """
 
 
@@ -77,12 +90,19 @@ def main():
     registry.register(ReadTool(cwd=cwd))
     registry.register(WriteTool(cwd=cwd))
     registry.register(EditTool(cwd=cwd))
+
+    # Todo state management
+    todo_state = TodoState()
+    registry.register(TodoTool(state=todo_state))
+
     agent = Agent(
         llm=llm,
         tools=registry,
         system_prompt=_build_system_prompt(cwd),
         on_tool_call=show_tool_call,
         on_tool_result=show_tool_result,
+        todo_state=todo_state,
+        nag_threshold=getattr(config, "nag_threshold", 3),
     )
 
     print("Flux — AI Coding Assistant (type 'exit' to quit)")
