@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p docs/superpowers/specs)",
+      "Bash(mkdir -p spec)",
+      "Bash(git check-ignore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git worktree:*)",
+      "Bash(pip install:*)",
+      "Bash(pytest:*)",
+      "Bash(python -c \"from flux.subagent import SubAgent, SUBAGENT_SYSTEM_PROMPT; print\\('Import success'\\)\")",
+      "Bash(python -m pytest tests/test_subagent.py::test_subagent_run_returns_final_response -v)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(git ls-tree:*)",
+      "Bash(python -m pytest tests/test_subagent.py -v)",
+      "Bash(python -m pytest --collect-only)",
+      "Bash(python -c \"from flux.subagent import SubAgent; import inspect; print\\(inspect.signature\\(SubAgent.run\\)\\)\")",
+      "Bash(python -c \"from flux.subagent import SubAgent; import inspect; print\\(inspect.signature\\(SubAgent._build_assistant_message\\)\\)\")",
+      "Bash(python -c \"from flux.subagent import SubAgent; import inspect; print\\(inspect.signature\\(SubAgent._execute_tool\\)\\)\")",
+      "Bash(python -m pytest tests/test_subagent.py::test_subagent_executes_tool -v)",
+      "Bash(python -c \"from flux.tools.registry import ToolRegistry; from flux.tools.bash import BashTool; from flux.tools.read import ReadTool; t = ToolRegistry\\(\\); t.register\\(BashTool\\(\\)\\); print\\('bash:', t.get\\('bash'\\)\\); print\\('todo:', t.get\\('todo'\\)\\)\")",
+      "Bash(grep -E \"\\\\.\\(md|txt\\)$\")",
+      "Bash(python -m pytest tests/test_subagent.py::test_subagent_tool_restrictions -v)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -c \"from flux.tools.subagenttool import SubAgentTool; print\\('Import successful'\\); print\\(f'Name: {SubAgentTool.name}'\\); print\\(f'Description: {SubAgentTool.description[:80]}...'\\)\")",
+      "Bash(python -m pytest tests/test_subagenttool.py -v)",
+      "Bash(python -c \"from flux.tools import SubAgentTool, TodoTool, TodoState, TodoItem; print\\('All exports successful:', SubAgentTool, TodoTool, TodoState, TodoItem\\)\")",
+      "Bash(python -c \"from flux.cli import SYSTEM_PROMPT; print\\('subagent' in SYSTEM_PROMPT\\)\")",
+      "Bash(python:*)",
+      "Bash(cd /tmp)",
+      "Bash(flux --version)"
+    ]
+  }
+}
